@@ -19,6 +19,25 @@ import wandb
 
 import jaxpme
 
+import jax.debug as jdb
+import numpy as nnp
+import csv
+
+
+def save_array_csv(x, node_mask, filename="x_data.csv"):
+    #x_np = nnp.array(x)
+    #x_np = nnp.array( safe_scale(x, node_mask) )
+    #x_np = nnp.array( x[node_mask] )
+    masked_arr = jnp.where(node_mask[:, None], x, 0)
+    x_np_with_zeros = nnp.array(masked_arr)
+    x_np = x_np_with_zeros[node_mask]
+    #x_raw_np = nnp.array(x)
+    #node_mask_np = nnp.array(node_mask)
+    #jdb.print(f'Writing feature vector of shape {x_np.shape}')
+    with open(filename, "a", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(x_np.tolist())
+
 class EnergySparse(BaseSubModule):
     prop_keys: Dict
     zmax: int = 118
@@ -71,6 +90,8 @@ class EnergySparse(BaseSubModule):
         node_mask = inputs['node_mask']  # (num_nodes)
         graph_mask = inputs['graph_mask']  # (num_graphs)
         theory_mask = inputs['theory_mask'] # (num_graphs, num_theory_levels)
+
+        #jdb.callback(save_array_csv, x, node_mask)
 
         num_theory_levels = theory_mask.shape[-1]
         theory_mask = theory_mask[batch_segments] # (num_nodes, num_theory_levels)

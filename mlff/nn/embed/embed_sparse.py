@@ -195,6 +195,9 @@ class GeometryEmbedSparse(BaseSubModule):
                     assert len(idx_j_lr) > 0
                     long_range_indices_present = True
 
+            #Switch of lr for c6 model
+            long_range_indices_present = False
+
             # Calculate pairwise distance vectors on long range indices.
             if long_range_indices_present is True:
                 r_ij_lr = jax.vmap(
