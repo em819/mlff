@@ -97,62 +97,64 @@ class EnergySparse(BaseSubModule):
         theory_mask = theory_mask[batch_segments] # (num_nodes, num_theory_levels)
 
         num_graphs = len(graph_mask)
-        if self.learn_atomic_type_shifts:
-            energy_offset = jnp.take(
-                self.param(
-                    'energy_offset',
-                    nn.initializers.zeros_init(),
-                    (self.zmax + 1, num_theory_levels)
-                ),
-                atomic_numbers,
-                axis=0
-            )  # (num_nodes, num_levels_of_theory)
-        else:
-            energy_offset = jnp.zeros((1,), dtype=x.dtype)
-
-        if self.learn_atomic_type_scales:
-            atomic_scales = jnp.take(
-                self.param(
-                    'atomic_scales',
-                    nn.initializers.ones_init(),
-                    (self.zmax + 1, num_theory_levels)
-                ), atomic_numbers, axis=0)  # (num_nodes, num_levels_of_theory)
-        else:
-            atomic_scales = jnp.ones((1,), dtype=x.dtype)
-
-        if self.regression_dim is not None:
-            y = nn.Dense(
-                self.regression_dim,
-                kernel_init=nn.initializers.lecun_normal(),
-                name='energy_dense_regression'
-            )(x)  # (num_nodes, regression_dim)
-            y = self.activation_fn(y)  # (num_nodes, regression_dim)
-            atomic_energy = nn.Dense(
-                num_theory_levels,
-                kernel_init=self.kernel_init,
-                # optional
-                use_bias=False,
-                name='energy_dense_final'
-            )(y)  # (num_nodes, num_levels_of_theory)
-        else:
-            atomic_energy = nn.Dense(
-                num_theory_levels,
-                # optional
-                use_bias=False,
-                kernel_init=self.kernel_init,
-                name='energy_dense_final'
-            )(x) # (num_nodes, num_levels_of_theory)
-
-        atomic_energy = atomic_energy * atomic_scales
-        atomic_energy += energy_offset  # (num_nodes, num_levels_of_theory)
-
-        atomic_energy = jnp.where(
-            theory_mask,
-            atomic_energy,
-            jnp.zeros_like(atomic_energy)
-        ).sum(axis=-1)  # (num_nodes)
-
-        atomic_energy = safe_scale(atomic_energy, node_mask)
+#EM: Removed, not necessary for c6 model
+#        if self.learn_atomic_type_shifts:
+#            energy_offset = jnp.take(
+#                self.param(
+#                    'energy_offset',
+#                    nn.initializers.zeros_init(),
+#                    (self.zmax + 1, num_theory_levels)
+#                ),
+#                atomic_numbers,
+#                axis=0
+#            )  # (num_nodes, num_levels_of_theory)
+#        else:
+#            energy_offset = jnp.zeros((1,), dtype=x.dtype)
+#
+#        if self.learn_atomic_type_scales:
+#            atomic_scales = jnp.take(
+#                self.param(
+#                    'atomic_scales',
+#                    nn.initializers.ones_init(),
+#                    (self.zmax + 1, num_theory_levels)
+#                ), atomic_numbers, axis=0)  # (num_nodes, num_levels_of_theory)
+#        else:
+#            atomic_scales = jnp.ones((1,), dtype=x.dtype)
+#
+#        if self.regression_dim is not None:
+#            y = nn.Dense(
+#                self.regression_dim,
+#                kernel_init=nn.initializers.lecun_normal(),
+#                name='energy_dense_regression'
+#            )(x)  # (num_nodes, regression_dim)
+#            y = self.activation_fn(y)  # (num_nodes, regression_dim)
+#            atomic_energy = nn.Dense(
+#                num_theory_levels,
+#                kernel_init=self.kernel_init,
+#                # optional
+#                use_bias=False,
+#                name='energy_dense_final'
+#            )(y)  # (num_nodes, num_levels_of_theory)
+#        else:
+#            atomic_energy = nn.Dense(
+#                num_theory_levels,
+#                # optional
+#                use_bias=False,
+#                kernel_init=self.kernel_init,
+#                name='energy_dense_final'
+#            )(x) # (num_nodes, num_levels_of_theory)
+#
+#        atomic_energy = atomic_energy * atomic_scales
+#        atomic_energy += energy_offset  # (num_nodes, num_levels_of_theory)
+#
+#        atomic_energy = jnp.where(
+#            theory_mask,
+#            atomic_energy,
+#            jnp.zeros_like(atomic_energy)
+#        ).sum(axis=-1)  # (num_nodes)
+#EM: Replace atomic_energy with dummy of appropriate size
+#        atomic_energy = safe_scale(atomic_energy, node_mask)
+        atomic_energy = jnp.zeros((x.shape[0],), dtype=x.dtype)
 
         if self.zbl_repulsion_bool:
             inputs.update(**self.zbl_repulsion(inputs))
